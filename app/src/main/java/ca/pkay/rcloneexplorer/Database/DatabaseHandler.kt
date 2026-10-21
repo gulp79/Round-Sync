@@ -156,10 +156,10 @@ class DatabaseHandler(context: Context?) :
         task.direction = cursor.getInt(6)
         task.md5sum = getBoolean(cursor, 7)
         task.wifionly = getBoolean(cursor, 8)
-        task.filterId = cursor.getLong(9)
+        task.filterId = if (cursor.isNull(9)) null else cursor.getLong(9)
         task.deleteExcluded = getBoolean(cursor, 10)
-        task.onFailFollowup = cursor.getLong(11)
-        task.onSuccessFollowup = cursor.getLong(12)
+        task.onFailFollowup = if (cursor.isNull(11) || cursor.getLong(11) <= 0L) null else cursor.getLong(11)
+        task.onSuccessFollowup = if (cursor.isNull(12) || cursor.getLong(12) <= 0L) null else cursor.getLong(12)
         return task
     }
 

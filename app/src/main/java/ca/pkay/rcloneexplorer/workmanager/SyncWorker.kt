@@ -125,7 +125,8 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
             handleTask()
             postSync()
         } else {
-            postSync()
+            log("No valid task found for ID. Aborting.")
+            mNotificationManager.cancelSyncNotification(ongoingNotificationID)
             return Result.failure()
         }
 
@@ -435,7 +436,7 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
         }
 
     private fun followupTask(followUpTaskID: Long?) {
-        if (followUpTaskID == null || followUpTaskID == -1L) {
+        if (followUpTaskID == null || followUpTaskID <= 0L) {
             return
         }
         Thread.sleep(1000)
