@@ -8,7 +8,7 @@
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_margin="8dp"
         android:elevation="4dp"
         android:theme="@style/SecondaryCardStyle"
@@ -18,8 +18,7 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_height="wrap_content">
 
             <ImageButton
                 android:id="@+id/triggerIcon"
@@ -34,12 +33,14 @@
 
             <TextView
                 android:id="@+id/triggerName"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
                 android:fontFamily="sans-serif"
                 android:textSize="16sp"
+                app:layout_constraintEnd_toStartOf="@+id/triggerOptions"
                 app:layout_constraintStart_toEndOf="@+id/triggerIcon"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:text="Triggername" />
@@ -48,8 +49,6 @@
                 android:id="@+id/triggerOptions"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
                 android:background="?selectableItemBackgroundBorderless"
                 android:contentDescription="@string/file_options_content_description"
                 android:padding="4dp"
@@ -62,98 +61,115 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:layout_marginBottom="8dp"
                 android:text="@string/trigger_time_label"
-                app:layout_constraintBottom_toTopOf="@+id/linearLayout"
                 app:layout_constraintStart_toStartOf="@+id/triggerName"
                 app:layout_constraintTop_toBottomOf="@+id/triggerName" />
 
             <TextView
                 android:id="@+id/intervalLabel"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 app:layout_constraintStart_toEndOf="@+id/text_label_time"
-                app:layout_constraintTop_toTopOf="@+id/text_label_time" />
-
-            <LinearLayout
-                android:id="@+id/linearLayout"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="64dp"
-                android:layout_marginEnd="64dp"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent">
-
-                <TextView
-                    android:id="@+id/trigger_enabled_mon"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/weekday_shorthand_mon" />
-
-                <TextView
-                    android:id="@+id/trigger_enabled_tue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/weekday_shorthand_tue"/>
-
-                <TextView
-                    android:id="@+id/trigger_enabled_wed"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/weekday_shorthand_wed" />
-
-                <TextView
-                    android:id="@+id/trigger_enabled_thu"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/weekday_shorthand_thur" />
-
-                <TextView
-                    android:id="@+id/trigger_enabled_fri"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/weekday_shorthand_fri" />
-
-                <TextView
-                    android:id="@+id/trigger_enabled_sat"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/weekday_shorthand_sat" />
-
-                <TextView
-                    android:id="@+id/trigger_enabled_sun"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/weekday_shorthand_sun" />
-            </LinearLayout>
+                app:layout_constraintTop_toTopOf="@+id/text_label_time"
+                tools:text="04:00" />
 
             <TextView
                 android:id="@+id/trigger_target_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
+                android:layout_marginTop="4dp"
                 android:text="@string/trigger_task_label"
-                app:layout_constraintStart_toEndOf="@+id/intervalLabel"
-                app:layout_constraintTop_toTopOf="@+id/intervalLabel" />
+                app:layout_constraintStart_toStartOf="@+id/text_label_time"
+                app:layout_constraintTop_toBottomOf="@+id/text_label_time" />
 
             <TextView
                 android:id="@+id/trigger_target"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintEnd_toStartOf="@+id/triggerOptions"
                 app:layout_constraintStart_toEndOf="@+id/trigger_target_label"
-                app:layout_constraintTop_toTopOf="@+id/trigger_target_label" />
+                app:layout_constraintTop_toTopOf="@+id/trigger_target_label"
+                tools:text="Backup task name" />
+
+            <LinearLayout
+                android:id="@+id/linearLayout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="8dp"
+                android:orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="@+id/text_label_time"
+                app:layout_constraintTop_toBottomOf="@+id/trigger_target">
+
+                <TextView
+                    android:id="@+id/trigger_enabled_mon"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text="@string/weekday_shorthand_mon" />
+
+                <TextView
+                    android:id="@+id/trigger_enabled_tue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text="@string/weekday_shorthand_tue" />
+
+                <TextView
+                    android:id="@+id/trigger_enabled_wed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text="@string/weekday_shorthand_wed" />
+
+                <TextView
+                    android:id="@+id/trigger_enabled_thu"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text="@string/weekday_shorthand_thur" />
+
+                <TextView
+                    android:id="@+id/trigger_enabled_fri"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text="@string/weekday_shorthand_fri" />
+
+                <TextView
+                    android:id="@+id/trigger_enabled_sat"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text="@string/weekday_shorthand_sat" />
+
+                <TextView
+                    android:id="@+id/trigger_enabled_sun"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text="@string/weekday_shorthand_sun" />
+            </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>

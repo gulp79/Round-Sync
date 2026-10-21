@@ -34,12 +34,14 @@
 
             <TextView
                 android:id="@+id/triggerName"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
                 android:fontFamily="sans-serif"
                 android:textSize="16sp"
+                app:layout_constraintEnd_toStartOf="@+id/triggerOptions"
                 app:layout_constraintStart_toEndOf="@+id/triggerIcon"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:text="Triggername" />
@@ -59,7 +61,7 @@
 
             <TextView
                 android:id="@+id/intervalLabel"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="8dp"
@@ -72,18 +74,21 @@
                 android:id="@+id/trigger_target_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
+                android:layout_marginStart="16dp"
                 android:text="@string/trigger_task_label"
                 app:layout_constraintStart_toEndOf="@+id/intervalLabel"
                 app:layout_constraintTop_toTopOf="@+id/intervalLabel" />
 
             <TextView
                 android:id="@+id/trigger_target"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintEnd_toStartOf="@+id/triggerOptions"
                 app:layout_constraintStart_toEndOf="@+id/trigger_target_label"
-                app:layout_constraintTop_toTopOf="@+id/trigger_target_label" />
+                app:layout_constraintTop_toTopOf="@+id/trigger_target_label"
+                tools:text="Target Task" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
