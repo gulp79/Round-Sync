@@ -89,17 +89,19 @@ class EphemeralWorker (private var mContext: Context, workerParams: WorkerParame
 
         registerBroadcastReceivers()
 
-        updateForegroundNotification(mNotificationManager?.updateNotification(
-            mTitle,
-            mTitle,
-            ArrayList(),
-            0,
-            ongoingNotificationID
-        ))
-
         if (inputData.keyValueMap.containsKey(EPHEMERAL_TYPE)){
             val type = Type.valueOf(inputData.getString(EPHEMERAL_TYPE) ?: "")
             mNotificationManager = prepareNotificationManager(type)
+            mTitle = mNotificationManager?.initialTitle ?: ""
+            mNotificationManager?.setCancelId(id)
+
+            updateForegroundNotification(mNotificationManager?.updateNotification(
+                mTitle,
+                mTitle,
+                ArrayList(),
+                0,
+                ongoingNotificationID
+            ))
 
             val remoteItem = getRemoteitemFromParcel(REMOTE)
             if(remoteItem == null){
@@ -107,7 +109,6 @@ class EphemeralWorker (private var mContext: Context, workerParams: WorkerParame
                 return Result.failure()
             }
 
-            mNotificationManager?.setCancelId(id)
             if(preconditionsMet()) {
                 // do not instantiate rclone when you dont want it to run.
                 // It will immediately run!
@@ -220,7 +221,7 @@ class EphemeralWorker (private var mContext: Context, workerParams: WorkerParame
                                 log2File?.log(line)
                             }
                             statusObject.parseLoglineToStatusObject(logline)
-                        } else if (logline.getString("level") == "warning") {
+                        } else if (logline.getString("level") == "warning" || logline.has("stats")) {
                             statusObject.parseLoglineToStatusObject(logline)
                         }
 

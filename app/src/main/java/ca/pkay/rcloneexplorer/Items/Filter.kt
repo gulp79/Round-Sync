@@ -1,11 +1,13 @@
 package ca.pkay.rcloneexplorer.Items
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNames
 import org.json.JSONObject
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class Filter(var id: Long) {
     @JsonNames("name") var title = ""

@@ -352,7 +352,7 @@
     <string name="task_item_label_to">Zu:</string>
     <string name="abi_not_supported_arm_downgrade">Diese Round Sync-Version wird nicht unterstützt. Eventuell funktioniert die armeabi-v7a-APK von github.com/newhinton/Round-Sync."</string>
     <string name="abi_not_supported">Diese Round Sync-Version wird auf dem Gerät nicht unterstützt.</string>
-    <string name="sync_notification_transferred">%s von %s übertragen</string>
+    <string name="sync_notification_transferred">%1$s von %2$s übertragen</string>
     <string name="sync_notification_speed">"Geschwindigkeit:   %s"</string>
     <string name="sync_notification_remaining">"Verbleibend:         %s"</string>
     <string name="sync_notification_errors">"Fehler:              %d"</string>
@@ -360,7 +360,7 @@
     <string name="sync_notification_deletions">Löschungen: %d</string>
     <string name="sync_notification_file_syncing">"Datei:               %s"</string>
     <string name="sync_notification_file_checking">"Checking:            %s"</string>
-    <string name="sync_notification_short">%s von %s, %s verbleibend</string>
+    <string name="sync_notification_short">%1$s von %2$s, %3$s verbleibend</string>
     <plurals name="modern_prettyprint_duration_d">
         <item quantity="one">%s Tag</item>
         <item quantity="other">%s Tage</item>

@@ -29,11 +29,12 @@ class UploadWorkerNotification(var context: Context) : WorkerNotification(contex
     override val SUMMARY_ID = 91
 
     override fun generateSuccessMessage(statusObject: StatusObject, fileItem: FileItem): String {
-        val transfers = statusObject.getTotalTransfers()
-        val message = if (transfers <= 1 && !fileItem.isDir) {
-            statusObject.getTransfers().toString()
-        } else {
+        val totalTransfers = statusObject.getTotalTransfers()
+        val transfers = if (totalTransfers > 0) totalTransfers else if (!fileItem.isDir) 1 else 0
+        val message = if (totalTransfers <= 1 && !fileItem.isDir) {
             fileItem.name
+        } else {
+            statusObject.getTransfers().toString()
         }
         return mContext.resources.getQuantityString(
                 R.plurals.worker_upload_success_message,
