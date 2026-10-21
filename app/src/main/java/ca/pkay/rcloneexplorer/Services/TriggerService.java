@@ -68,30 +68,27 @@ public class TriggerService extends Service {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(System.currentTimeMillis());
 
-            int seconds = trigger.getTime();
-            calendar.set(Calendar.HOUR_OF_DAY, seconds/60);
-            calendar.set(Calendar.MINUTE, seconds%60);
+            int totalMinutes = trigger.getTime();
+            calendar.set(Calendar.HOUR_OF_DAY, totalMinutes / 60);
+            calendar.set(Calendar.MINUTE, totalMinutes % 60);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
 
-            long difference = calendar.getTimeInMillis()-System.currentTimeMillis();
-            //Properly schedule past events
-            if(difference<0){
-                difference = (24*60*60*1000) + difference;
+            if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+                calendar.add(Calendar.DAY_OF_YEAR, 1);
             }
 
-            // If a triggered event schedules the next occurence, we need to make sure that it does not create an endless loop for 60 seconds.
-            // If it is "now", do it in 24h
-            if(Calendar.getInstance().get(Calendar.MINUTE) == seconds%60){
-                difference = (24*60*60*1000);
-            }
-
-            long timeToTrigger = System.currentTimeMillis() + difference;
+            long timeToTrigger = calendar.getTimeInMillis();
 
             AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             PendingIntent pi = getIntent(trigger.getId());
             am.cancel(pi);
 
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-            boolean allowWhileIdle = sharedPreferences.getBoolean(context.getString(R.string.shared_preferences_allow_sync_trigger_while_idle), false);
+            boolean allowWhileIdle = sharedPreferences.getBoolean(
+                    context.getString(R.string.shared_preferences_allow_sync_trigger_while_idle),
+                    false
+            );
 
             if((new PermissionManager(context)).grantedAlarms()) {
                 if (allowWhileIdle) {
@@ -167,7 +164,7 @@ public class TriggerService extends Service {
         i.putExtra(TRIGGER_ID, triggerId);
 
         // Todo: Beacause of the long to int cast, this may fail when the user has more than Integer.MAX tasks.
-        return PendingIntent.getBroadcast(context, (int) triggerId, i, PendingIntent.FLAG_UPDATE_CURRENT ^ PendingIntent.FLAG_IMMUTABLE);
+        return PendingIntent.getBroadcast(context, (int) triggerId, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     @Override
