@@ -68,8 +68,8 @@ public class AboutActivity extends AppCompatActivity {
     }
 
     private void showChangelog() {
-        Intent changelogIntent = new Intent(this, ChangelogActivity.class);
-        startActivity(changelogIntent);
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github_releases_url)));
+        tryStartActivity(this, browserIntent);
     }
 
     private void showContributors() {
@@ -103,7 +103,7 @@ public class AboutActivity extends AppCompatActivity {
     }
 
     private void openOldMaintainerGithubLink() {
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github_maintainer_url)));
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github_old_maintainer_url)));
         tryStartActivity(this, browserIntent);
     }
 }

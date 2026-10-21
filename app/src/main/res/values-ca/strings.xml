@@ -28,7 +28,7 @@
     <string name="author">Autor Original</string>
     <string name="follow_on_github">Segueix a GitHub</string>
     <string name="maintainer">Mantenidor</string>
-    <string name="old_maintainer">Antic Mantenidor</string>
+    <string name="old_maintainer">Projecte original</string>
     <string name="empty_folder">La carpeta és buida</string>
     <string name="ooops">Ups!</string>
     <string name="no_config_found">No s\'ha trobat cap configuració, importa\'n una o afegeix un remot</string>

@@ -390,7 +390,7 @@
     <string name="logFragment">Logs</string>
     <string name="alarm_while_idle">Erlaube Aufgaben wenn das Gerät im Schlafmodus ist</string>
     <string name="alarm_while_idle_summary">Dies kann mehr Akku verbrauchen da das Gerät extra aufwachen muss. Falls verboten können Aufgaben sehr verspätet starten</string>
-    <string name="old_maintainer">Alter Maintainer</string>
+    <string name="old_maintainer">Ursprüngliches Projekt</string>
     <string name="operation_failed_no_unmetered">Wir konnten %1$s nicht synchronisieren da keine unbegrenzte Verbindung verfügbar war.</string>
     <string name="operation_failed_no_connection">Wir konnten %1$s nicht synchronisieren da keine Netzwerkverbindung verfügbar war.</string>
     <string name="task_data_validation_error_no_local_path">Du hast noch keinen lokalen Pfad ausgewählt</string>

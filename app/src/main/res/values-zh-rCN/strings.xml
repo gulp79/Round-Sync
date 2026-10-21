@@ -28,7 +28,7 @@
     <string name="author">原作者</string>
     <string name="follow_on_github">在 GitHub 上关注</string>
     <string name="maintainer">维护者</string>
-    <string name="old_maintainer">老维护者</string>
+    <string name="old_maintainer">原始项目</string>
     <string name="empty_folder">文件夹为空</string>
     <string name="ooops">哎呀！</string>
     <string name="no_config_found">未找到配置，请导入或添加远端</string>
