@@ -189,7 +189,7 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
                                 log2File?.log(line)
                             }
                             statusObject.parseLoglineToStatusObject(logline)
-                        } else if (logline.getString("level") == "warning") {
+                        } else if (logline.getString("level") == "warning" || logline.has("stats")) {
                             statusObject.parseLoglineToStatusObject(logline)
                         }
 
