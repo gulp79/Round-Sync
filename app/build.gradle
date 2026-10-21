@@ -2,6 +2,54 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlinx-serialization'
 
+def resolveVersionName() {
+    if (project.hasProperty('appVersionName')) {
+        return project.property('appVersionName').toString().trim()
+    }
+    def envAppVersion = System.getenv("APP_VERSION_NAME")
+    if (envAppVersion != null && !envAppVersion.trim().isEmpty()) {
+        return envAppVersion.trim()
+    }
+    def envTag = System.getenv("GITHUB_REF_NAME")
+    if (envTag != null && !envTag.trim().isEmpty()) {
+        // Tag build trigger in GitHub Actions (e.g. "v2.6.0-rclone-extra" or "v2.5.7")
+        def isTag = "tag".equalsIgnoreCase(System.getenv("GITHUB_REF_TYPE")) || envTag.startsWith("v")
+        if (isTag) {
+            return envTag.startsWith("v") ? envTag.substring(1) : envTag
+        }
+    }
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'describe', '--tags', '--exact-match'
+            standardOutput = stdout
+            errorOutput = new ByteArrayOutputStream()
+            ignoreExitValue = true
+        }
+        def tag = stdout.toString().trim()
+        if (!tag.isEmpty()) {
+            return tag.startsWith("v") ? tag.substring(1) : tag
+        }
+    } catch (Exception ignored) {
+    }
+    return project.findProperty('de.felixnuesse.extract.versionName') ?: '2.6.0'
+}
+
+def resolveVersionCode() {
+    if (project.hasProperty('appVersionCode')) {
+        return project.property('appVersionCode').toString().trim().toInteger()
+    }
+    def envAppCode = System.getenv("APP_VERSION_CODE")
+    if (envAppCode != null && !envAppCode.trim().isEmpty()) {
+        return envAppCode.trim().toInteger()
+    }
+    def propCode = project.findProperty('de.felixnuesse.extract.versionCode')
+    if (propCode != null) {
+        return propCode.toString().trim().toInteger()
+    }
+    return 420
+}
+
 android {
 signingConfigs {
         release {
@@ -40,8 +88,8 @@ signingConfigs {
         minSdkVersion 23
         compileSdk 34
         targetSdkVersion 35
-        versionCode 410 // last digit is reserved for ABI, only ever end on 0!
-        versionName '2.6.0'
+        versionCode resolveVersionCode() // last digit is reserved for ABI, base code must end in 0!
+        versionName resolveVersionName()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "java.lang.String", "CLI", System.getenv('RCX_BUILD_CLI') ? System.getenv('RCX_BUILD_CLI') : "\"c03129b6-b09f-9cb4-8fcd-7f143b8f94ef\""
         buildConfigField "java.lang.String", "VCP_AUTHORITY", "\"" + applicationId + ".vcp\"";
@@ -168,6 +216,15 @@ signingConfigs {
         includeInApk = false
         // Disables dependency metadata when building Android App Bundles.
         includeInBundle = false
+    }
+    tasks.register("printAppVersion") {
+        doLast {
+            println("=== APP VERSION INFO ===")
+            println("versionName: ${android.defaultConfig.versionName}")
+            println("versionCode: ${android.defaultConfig.versionCode}")
+            println("archivesBaseName: ${project.archivesBaseName}")
+            println("========================")
+        }
     }
 }
 
