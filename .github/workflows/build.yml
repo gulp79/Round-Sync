@@ -176,7 +176,3 @@ jobs:
             I file APK sono allegati qui sotto.
           document: |
             app/build/outputs/apk/oss/release/*-oss-arm64-v8a-release.apk
-            app/build/outputs/apk/oss/release/*-oss-armeabi-v7a-release.apk
-            app/build/outputs/apk/oss/release/*-oss-x86-release.apk
-            app/build/outputs/apk/oss/release/*-oss-x86_64-release.apk
-            app/build/outputs/apk/oss/release/*-oss-universal-release.apk
