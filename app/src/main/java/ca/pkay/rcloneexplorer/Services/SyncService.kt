@@ -24,7 +24,6 @@ class SyncService: IntentService("ca.pkay.rcexplorer.SYNC_SERCVICE"){
         // Todo: Allow SyncWorker to run in silent mode, or remove this!
         val silentRun = intent.getBooleanExtra("notification", true)
 
-
         if (action.equals("START_TASK")) {
             val db = DatabaseHandler(this)
             for (task in db.allTasks) {

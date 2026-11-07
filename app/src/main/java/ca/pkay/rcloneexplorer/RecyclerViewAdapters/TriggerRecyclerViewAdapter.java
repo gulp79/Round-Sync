@@ -37,7 +37,9 @@ import ca.pkay.rcloneexplorer.Items.Trigger;
 import ca.pkay.rcloneexplorer.R;
 import ca.pkay.rcloneexplorer.Services.TriggerService;
 import es.dmoral.toasty.Toasty;
-
+// #---Alps Begin
+import androidx.appcompat.app.AlertDialog;
+// #---Alps End
 public class TriggerRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
 
     private List<Trigger> triggers;
@@ -162,6 +164,7 @@ public class TriggerRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
         }
     }
 
+// #---Alps Begin
     private void showFileMenu(View view, final Trigger trigger) {
         PopupMenu popupMenu = new PopupMenu(context, view);
         popupMenu.getMenuInflater().inflate(R.menu.trigger_item_menu, popupMenu.getMenu());
@@ -176,6 +179,9 @@ public class TriggerRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
                 case R.id.action_delete_trigger:
                     deleteTrigger(trigger);
                     break;
+                case R.id.action_view_log: // YENİ EKLENEN SATIR
+                    showLogDialog(trigger);
+                    break;
                 default:
                     return false;
             }
@@ -184,6 +190,35 @@ public class TriggerRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
         popupMenu.show();
     }
 
+    private void showLogDialog(Trigger trigger) {
+        // Dosya yolunu SyncWorker/SyncService içinde belirttiğin yol ile birebir aynı yapmalısın
+        java.io.File logDir = new java.io.File(context.getExternalFilesDir(null), "logs");
+        java.io.File logFile = new java.io.File(logDir, trigger.getTitle() + "_log.txt");
+
+        if (logFile.exists()) {
+            StringBuilder logContent = new StringBuilder();
+            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(logFile))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    logContent.append(line).append("\n");
+                }
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+                android.widget.Toast.makeText(context, "Log dosyası okunurken hata oluştu.", android.widget.Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Log içeriğini Alert Dialog ile ekranda göster
+            new androidx.appcompat.app.AlertDialog.Builder(context)
+                    .setTitle(trigger.getTitle() + " Log")
+                    .setMessage(logContent.toString())
+                    .setPositiveButton("Kapat", null)
+                    .show();
+        } else {
+            android.widget.Toast.makeText(context, "Bu işlem için henüz log oluşturulmamış.", android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+// #---Alps End
     public static class ScheduleViewHolder extends RecyclerView.ViewHolder {
 
         final View mView;

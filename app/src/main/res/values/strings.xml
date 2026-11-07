@@ -128,7 +128,7 @@
     <string name="intro_storage_description">Round Sync relies on rclone and needs your permission to access all files. Please grant storage access when prompted, otherwise the application will not work properly.</string>
     <string name="intro_community_title">Community</string>
     <string name="intro_community_description">Round Sync is a community driven project. To contribute and improve the application, you can enable anonymous bug reporting. For more information, please visit felixnuesse.de/privacy-roundsync.</string>
-
+    <string name="view_log">View Log</string>
     <string name="file_access">File Access</string>
     <string name="look_and_feel">Look and Feel</string>
     <string name="dark_theme">Dark theme</string>

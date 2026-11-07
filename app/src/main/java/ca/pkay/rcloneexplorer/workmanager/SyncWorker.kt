@@ -7,7 +7,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.net.wifi.WifiManager
+import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AlertDialog
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.work.ForegroundInfo
@@ -31,49 +33,38 @@ import kotlinx.serialization.json.Json
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.InterruptedIOException
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.Random
 
-class SyncWorker (private var mContext: Context, workerParams: WorkerParameters): Worker(mContext, workerParams) {
+class SyncWorker (private val mContext: Context, workerParams: WorkerParameters): Worker(mContext, workerParams) {
 
     companion object {
         const val TASK_ID = "TASK_ID"
         const val TASK_EPHEMERAL = "TASK_EPHEMERAL"
         private const val TAG = "SyncWorker"
-
-        //those Extras do not follow the above schema, because they are exposed to external applications
-        //That means shorter values make it easier to use. There is no other technical reason
         const val TASK_SYNC_ACTION = "START_TASK"
         const val TASK_CANCEL_ACTION = "CANCEL_TASK"
         const val EXTRA_TASK_ID = "task"
-
-        // Todo: Allow SyncWorker to run in silent mode, or remove this!
         const val EXTRA_TASK_SILENT = "notification"
     }
-
-
 
     internal enum class FAILURE_REASON {
         NO_FAILURE, NO_UNMETERED, NO_CONNECTION, RCLONE_ERROR, CONNECTIVITY_CHANGED, CANCELLED, NO_TASK
     }
 
-    // Objects
-    private var mRclone = Rclone(mContext)
-    private var mDatabase = DatabaseHandler(mContext)
-    private var mNotificationManager = SyncServiceNotifications(mContext)
+    private val mRclone = Rclone(mContext)
+    private val mDatabase = DatabaseHandler(mContext)
+    private val mNotificationManager = SyncServiceNotifications(mContext)
     private val mPreferences = PreferenceManager.getDefaultSharedPreferences(mContext)
 
-
     private var log2File: Log2File? = null
-
-
-
-    // States
     private val sIsLoggingEnabled = mPreferences.getBoolean(getString(R.string.pref_key_logs), false)
     private var sConnectivityChanged = false
-
     private var sRcloneProcess: Process? = null
     private val statusObject = StatusObject(mContext)
     private var failureReason = FAILURE_REASON.NO_FAILURE
@@ -81,41 +72,30 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
     private var silentRun = false
     private val ongoingNotificationID = Random().nextInt()
 
-
-    // Task
     private lateinit var mTask: Task
     private var mTitle: String = mContext.getString(R.string.sync_service_notification_startingsync)
 
-
-
     override fun doWork(): Result {
-
         prepareNotifications()
         registerBroadcastReceivers()
 
         updateForegroundNotification(mNotificationManager.updateSyncNotification(
-            mTitle,
-            mTitle,
-            ArrayList(),
-            0,
-            ongoingNotificationID
+            mTitle, mTitle, ArrayList(), 0, ongoingNotificationID
         ))
 
-
         var ephemeralTask: Task? = null
-
-        if(inputData.keyValueMap.containsKey(TASK_ID)){
+        if (inputData.keyValueMap.containsKey(TASK_ID)) {
             val id = inputData.getLong(TASK_ID, -1)
             ephemeralTask = mDatabase.getTask(id)
         }
 
-        if(inputData.keyValueMap.containsKey(TASK_EPHEMERAL)){
+        if (inputData.keyValueMap.containsKey(TASK_EPHEMERAL)) {
             val taskString = inputData.getString(TASK_EPHEMERAL) ?: ""
-            if(taskString.isNotEmpty()) {
+            if (taskString.isNotEmpty()) {
                 try {
                     ephemeralTask = Json.decodeFromString<Task>(taskString)
                 } catch (e: Exception) {
-                    log("Could not deserialize")
+                    log("Could not deserialize task layout")
                 }
             }
         }
@@ -129,8 +109,6 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
             mNotificationManager.cancelSyncNotification(ongoingNotificationID)
             return Result.failure()
         }
-
-        // Indicate whether the work finished successfully with the Result
         return Result.success()
     }
 
@@ -144,7 +122,11 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
 
     private fun finishWork() {
         sRcloneProcess?.destroy()
-        mContext.unregisterReceiver(connectivityChangeBroadcastReceiver)
+        try {
+            mContext.unregisterReceiver(connectivityChangeBroadcastReceiver)
+        } catch (e: Exception) {
+            // Güvenli geçiş
+        }
         postSync()
     }
 
@@ -156,17 +138,14 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
         if (mTask.title == "") {
             mTitle = mTask.remotePath
         }
-        if(arePreconditionsMet()) {
-            val taskFilter = if(mTask.filterId != null ) mDatabase.getFilter(mTask.filterId!!) else null;
+
+        if (arePreconditionsMet()) {
+            val taskFilter = if (mTask.filterId != null) mDatabase.getFilter(mTask.filterId!!) else null
             val taskFilterList = taskFilter?.getFilters() ?: ArrayList()
+
             sRcloneProcess = mRclone.sync(
-                remoteItem,
-                mTask.localPath,
-                mTask.remotePath,
-                mTask.direction,
-                mTask.md5sum,
-                taskFilterList,
-                mTask.deleteExcluded
+                remoteItem, mTask.localPath, mTask.remotePath, mTask.direction,
+                mTask.md5sum, taskFilterList, mTask.deleteExcluded
             )
             handleSync(mTitle)
             sendUploadFinishedBroadcast(remoteItem.name, mTask.remotePath)
@@ -175,64 +154,124 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
 
     private fun handleSync(title: String) {
         SyncLog.info(mContext, mTitle, mContext.getString(R.string.operation_start_sync))
-        if (sRcloneProcess != null) {
-            val localProcessReference = sRcloneProcess!!
-            try {
-                val reader = BufferedReader(InputStreamReader(localProcessReference.errorStream))
-                val iterator = reader.lineSequence().iterator()
-                while(iterator.hasNext()) {
-                    val line = iterator.next()
-                    try {
-                        val logline = JSONObject(line)
-                        //todo: migrate this to StatusObject, so that we can handle everything properly.
-                        if (logline.getString("level") == "error") {
-                            if (sIsLoggingEnabled) {
-                                log2File?.log(line)
-                            }
-                            statusObject.parseLoglineToStatusObject(logline)
-                        } else if (logline.getString("level") == "warning" || logline.has("stats")) {
-                            statusObject.parseLoglineToStatusObject(logline)
-                        }
 
-                        updateForegroundNotification(mNotificationManager.updateSyncNotification(
-                            title,
-                            statusObject.notificationContent,
-                            statusObject.notificationBigText,
-                            statusObject.notificationPercent,
-                            ongoingNotificationID
-                        ))
-                    } catch (e: JSONException) {
-                        FLog.e(TAG, "SyncService-Error: the offending line: $line")
-                        //FLog.e(TAG, "onHandleIntent: error reading json", e)
+        val logDirPath = mContext.getExternalFilesDir(null)?.absolutePath + "/logs"
+        val logDir = File(logDirPath)
+        if (!logDir.exists()) logDir.mkdirs()
+
+        val logFile = File(logDir, "${title}_log.txt")
+        var finalStatsMsg = ""
+
+        sRcloneProcess?.let { localProcessReference ->
+            logFile.bufferedWriter().use { logWriter ->
+                try {
+                    val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault())
+                    logWriter.write("${sdf.format(java.util.Date())} INFO  : Senkronizasyon basladi: $title\n\n")
+
+                    val reader = BufferedReader(InputStreamReader(localProcessReference.errorStream))
+                    val iterator = reader.lineSequence().iterator()
+                    while (iterator.hasNext()) {
+                        val line = iterator.next()
+                        try {
+                            val logline = JSONObject(line)
+                            val level = logline.optString("level").lowercase(Locale.getDefault())
+                            val msg = logline.optString("msg").trim()
+                            val obj = logline.optString("object").trim()
+
+                            // Dosya transferi, silme ve kopyalama olaylarını yakala
+                            val isFileAction = msg.contains("Copied") || 
+                                               msg.contains("Deleted") || 
+                                               msg.contains("Updated") || 
+                                               msg.contains("Moved")
+
+                            if (level == "info" || (level == "notice" && isFileAction)) {
+                                val itemText = if (obj.isNotEmpty()) "$obj: $msg" else msg
+                                logWriter.write("INFO  : $itemText\n")
+                            } else if (level == "error") {
+                                val itemText = if (obj.isNotEmpty()) "$obj: $msg" else msg
+                                logWriter.write("ERROR : $itemText\n")
+                            } else if (level == "notice" && msg.contains("Transferred:")) {
+                                finalStatsMsg = msg
+                            } else if (level == "notice" && msg.isNotEmpty()) {
+                                logWriter.write("NOTICE: $msg\n")
+                            }
+
+                            if (level == "error") {
+                                if (sIsLoggingEnabled) log2File?.log(line)
+                                statusObject.parseLoglineToStatusObject(logline)
+                            } else if (level == "warning" || logline.has("stats")) {
+                                statusObject.parseLoglineToStatusObject(logline)
+                            }
+
+                            updateForegroundNotification(mNotificationManager.updateSyncNotification(
+                                title, statusObject.notificationContent, statusObject.notificationBigText,
+                                statusObject.notificationPercent, ongoingNotificationID
+                            ))
+                        } catch (e: JSONException) {
+                            FLog.e(TAG, "SyncService-Error processing line JSON: $line")
+                        }
                     }
+
+
+
+                    if (finalStatsMsg.isNotEmpty()) {
+                        logWriter.write("\n--- ISLEM OZETI ---\n$finalStatsMsg\n")
+                    }
+                    val endSdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault())
+                    logWriter.write("\n${endSdf.format(java.util.Date())} INFO  : Islem sona erdi.\n")
+
+                } catch (e: InterruptedIOException) {
+                    FLog.e(TAG, "onHandleIntent: I/O interrupted, stream closed", e)
+                } catch (e: IOException) {
+                    FLog.e(TAG, "onHandleIntent: error reading stdout", e)
                 }
-            } catch (e: InterruptedIOException) {
-                FLog.e(TAG, "onHandleIntent: I/O interrupted, stream closed", e)
-            } catch (e: IOException) {
-                FLog.e(TAG, "onHandleIntent: error reading stdout", e)
             }
             try {
                 localProcessReference.waitFor()
             } catch (e: InterruptedException) {
                 FLog.e(TAG, "onHandleIntent: error waiting for process", e)
             }
-        } else {
-            log("Sync: No Rclone Process!")
-        }
+        } ?: log("Sync: No Rclone Process runtime detected!")
+
         mNotificationManager.cancelSyncNotification(ongoingNotificationID)
+    }
+    private fun showLogDialog(task: Task) {
+        var taskName = task.title
+        if (taskName.isNullOrEmpty()) {
+            taskName = task.remotePath
+        }
+
+        val logFile = File(mContext.getExternalFilesDir(null)?.absolutePath + "/logs/" + taskName + "_log.txt")
+        if (!logFile.exists()) {
+            Toast.makeText(mContext, "Henüz log dosyası oluşturulmamış.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            val logContent = StringBuilder()
+            BufferedReader(java.io.FileReader(logFile)).use { reader ->
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    logContent.append(line).append("\n")
+                }
+            }
+
+            AlertDialog.Builder(mContext)
+                .setTitle("Log: $taskName")
+                .setMessage(logContent.toString())
+                .setPositiveButton("Kapat", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(mContext, "Log okunamadı: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun postSync() {
-        if (endNotificationAlreadyPosted) {
-            return
-        }
-        if (silentRun) {
-            return
-        }
+        if (endNotificationAlreadyPosted || silentRun) return
 
         val notificationId = System.currentTimeMillis().toInt()
-
         var content = mContext.getString(R.string.operation_failed_unknown, mTitle)
+
         when (failureReason) {
             FAILURE_REASON.NO_FAILURE -> {
                 showSuccessNotification(notificationId)
@@ -244,21 +283,11 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
                 endNotificationAlreadyPosted = true
                 return
             }
-            FAILURE_REASON.NO_TASK -> {
-                content = getString(R.string.operation_failed_notask)
-            }
-            FAILURE_REASON.CONNECTIVITY_CHANGED -> {
-                content = mContext.getString(R.string.operation_failed_data_change, mTitle)
-            }
-            FAILURE_REASON.NO_UNMETERED -> {
-                content = mContext.getString(R.string.operation_failed_no_unmetered, mTitle)
-            }
-            FAILURE_REASON.NO_CONNECTION -> {
-                content = mContext.getString(R.string.operation_failed_no_connection, mTitle)
-            }
-            FAILURE_REASON.RCLONE_ERROR -> {
-                content = mContext.getString(R.string.operation_failed_unknown_rclone_error, mTitle)
-            }
+            FAILURE_REASON.NO_TASK -> content = getString(R.string.operation_failed_notask)
+            FAILURE_REASON.CONNECTIVITY_CHANGED -> content = mContext.getString(R.string.operation_failed_data_change, mTitle)
+            FAILURE_REASON.NO_UNMETERED -> content = mContext.getString(R.string.operation_failed_no_unmetered, mTitle)
+            FAILURE_REASON.NO_CONNECTION -> content = mContext.getString(R.string.operation_failed_no_connection, mTitle)
+            FAILURE_REASON.RCLONE_ERROR -> content = mContext.getString(R.string.operation_failed_unknown_rclone_error, mTitle)
         }
         followupTask(mTask.onFailFollowup)
         showFailNotification(notificationId, content)
@@ -268,70 +297,36 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
 
     private fun showCancelledNotification(notificationId: Int) {
         SyncLog.info(mContext, mTitle, mContext.getString(R.string.operation_failed_cancelled))
-        mNotificationManager.showCancelledNotificationOrReport(
-            mTitle,
-            notificationId,
-            mTask.id
-        )
+        mNotificationManager.showCancelledNotificationOrReport(mTitle, notificationId, mTask.id)
     }
 
     private fun showSuccessNotification(notificationId: Int) {
-        //Todo: Show sync-errors in notification. Also see line 169
-
         var message = generateSuccessMessage(statusObject)
-        mNotificationManager.showSuccessNotificationOrReport(
-            mTitle,
-            message,
-            notificationId
-        )
-
-        message += """
-                        
-        Est. Speed: ${statusObject.getEstimatedAverageSpeed()}
-        Avg. Speed: ${statusObject.getLastItemAverageSpeed()}
-                        """.trimIndent()
+        mNotificationManager.showSuccessNotificationOrReport(mTitle, message, notificationId)
+        message += "\n\nEst. Speed: ${statusObject.getEstimatedAverageSpeed()}\nAvg. Speed: ${statusObject.getLastItemAverageSpeed()}"
         SyncLog.info(mContext, mContext.getString(R.string.operation_success, mTitle), message)
     }
 
-    // this is currently only a useless mapper. It is supposed to keep this worker in sync with the ephemeral one.
-    // when they are merged eventually, this can be easily extracted.
     private fun generateSuccessMessage(statusObject: StatusObject): String {
         var message = mContext.resources.getQuantityString(
-                R.plurals.operation_success_description,
-                statusObject.getTotalTransfers(),
-                mTitle,
-                statusObject.getTotalSize(),
-                statusObject.getTotalTransfers()
+            R.plurals.operation_success_description, statusObject.getTotalTransfers(),
+            mTitle, statusObject.getTotalSize(), statusObject.getTotalTransfers()
         )
         if (statusObject.getTotalTransfers() == 0) {
             message = mContext.resources.getString(R.string.operation_success_description_zero)
         }
         if (statusObject.getDeletions() > 0) {
-            message += """
-                        
-                        ${
-                mContext.getString(
-                        R.string.operation_success_description_deletions_prefix,
-                        statusObject.getDeletions()
-                )
-            }
-                        """.trimIndent()
+            message += "\n\n${mContext.getString(R.string.operation_success_description_deletions_prefix, statusObject.getDeletions())}"
         }
         return message
     }
 
     private fun showFailNotification(notificationId: Int, content: String, wasCancelled: Boolean = false) {
         var text = content
-        //Todo: check if we should also add errors on success
         statusObject.printErrors()
         val errors = statusObject.getAllErrorMessages()
         if (errors.isNotEmpty()) {
-            text += """
-                        
-                        
-                        
-                        ${statusObject.getAllErrorMessages()}
-                        """.trimIndent()
+            text += "\n\n\n${statusObject.getAllErrorMessages()}"
         }
 
         var notifyTitle = mContext.getString(R.string.operation_failed)
@@ -339,12 +334,7 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
             notifyTitle = mContext.getString(R.string.operation_failed_cancelled)
         }
         SyncLog.error(mContext, notifyTitle, "$mTitle: $text")
-        mNotificationManager.showFailedNotificationOrReport(
-            mTitle,
-            text,
-            notificationId,
-            mTask.id
-        )
+        mNotificationManager.showFailedNotificationOrReport(mTitle, text, notificationId, mTask.id)
     }
 
     private fun arePreconditionsMet(): Boolean {
@@ -356,59 +346,42 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
             failureReason = FAILURE_REASON.NO_CONNECTION
             return false
         }
-
         return true
     }
 
     private fun prepareNotifications() {
-
         GenericSyncNotification(mContext).setNotificationChannel(
-                SyncServiceNotifications.CHANNEL_ID,
-                getString(R.string.sync_service_notification_channel_title),
-                getString(R.string.sync_service_notification_channel_description),
-                GROUP_ID,
-                getString(R.string.sync_service_notification_group)
+            SyncServiceNotifications.CHANNEL_ID, getString(R.string.sync_service_notification_channel_title),
+            getString(R.string.sync_service_notification_channel_description), GROUP_ID, getString(R.string.sync_service_notification_group)
         )
         GenericSyncNotification(mContext).setNotificationChannel(
-            SyncServiceNotifications.CHANNEL_SUCCESS_ID,
-            getString(R.string.sync_service_notification_channel_success_title),
-            getString(R.string.sync_service_notification_channel_success_description),
-                GROUP_ID,
-                getString(R.string.sync_service_notification_group)
+            SyncServiceNotifications.CHANNEL_SUCCESS_ID, getString(R.string.sync_service_notification_channel_success_title),
+            getString(R.string.sync_service_notification_channel_success_description), GROUP_ID, getString(R.string.sync_service_notification_group)
         )
         GenericSyncNotification(mContext).setNotificationChannel(
-            SyncServiceNotifications.CHANNEL_FAIL_ID,
-            getString(R.string.sync_service_notification_channel_fail_title),
-            getString(R.string.sync_service_notification_channel_fail_description),
-                GROUP_ID,
-                getString(R.string.sync_service_notification_group)
+            SyncServiceNotifications.CHANNEL_FAIL_ID, getString(R.string.sync_service_notification_channel_fail_title),
+            getString(R.string.sync_service_notification_channel_fail_description), GROUP_ID, getString(R.string.sync_service_notification_group)
         )
         GenericSyncNotification(mContext).setNotificationChannel(
-            ReportNotifications.CHANNEL_REPORT_ID,
-            getString(R.string.sync_service_notification_channel_report_title),
-            getString(R.string.sync_service_notification_channel_report_description),
-                GROUP_ID,
-                getString(R.string.sync_service_notification_group)
+            ReportNotifications.CHANNEL_REPORT_ID, getString(R.string.sync_service_notification_channel_report_title),
+            getString(R.string.sync_service_notification_channel_report_description), GROUP_ID, getString(R.string.sync_service_notification_group)
         )
-
     }
 
     private fun sendUploadFinishedBroadcast(remote: String, path: String?) {
-        val intent = Intent()
-        intent.action = getString(R.string.background_service_broadcast)
-        intent.putExtra(getString(R.string.background_service_broadcast_data_remote), remote)
-        intent.putExtra(getString(R.string.background_service_broadcast_data_path), path)
+        val intent = Intent().apply {
+            action = getString(R.string.background_service_broadcast)
+            putExtra(getString(R.string.background_service_broadcast_data_remote), remote)
+            putExtra(getString(R.string.background_service_broadcast_data_path), path)
+        }
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent)
     }
 
-    // Creates an instance of ForegroundInfo which can be used to update the
-    // ongoing notification.
     private fun updateForegroundNotification(notification: Notification?) {
         notification?.let {
             setForegroundAsync(ForegroundInfo(ongoingNotificationID, it, FOREGROUND_SERVICE_TYPE_DATA_SYNC))
         }
     }
-
 
     private fun log(message: String) {
         FLog.e(TAG, "SyncWorker: $message")
@@ -419,27 +392,22 @@ class SyncWorker (private var mContext: Context, workerParams: WorkerParameters)
     }
 
     private fun registerBroadcastReceivers() {
-        val intentFilter = IntentFilter()
-        intentFilter.addAction(WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION)
+        val intentFilter = IntentFilter(WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION)
         mContext.registerReceiver(connectivityChangeBroadcastReceiver, intentFilter)
     }
 
-    private val connectivityChangeBroadcastReceiver: BroadcastReceiver =
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                if(endNotificationAlreadyPosted){
-                    return
-                }
-                sConnectivityChanged = true
-                failureReason = FAILURE_REASON.CONNECTIVITY_CHANGED
-            }
+    private val connectivityChangeBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (endNotificationAlreadyPosted) return
+            sConnectivityChanged = true
+            failureReason = FAILURE_REASON.CONNECTIVITY_CHANGED
         }
+    }
 
     private fun followupTask(followUpTaskID: Long?) {
-        if (followUpTaskID == null || followUpTaskID <= 0L) {
-            return
-        }
+        if (followUpTaskID == null || followUpTaskID <= 0L) return
         Thread.sleep(1000)
         SyncManager(mContext).queue(followUpTaskID)
     }
 }
+

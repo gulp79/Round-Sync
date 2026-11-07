@@ -1,7 +1,7 @@
 # Round Sync - Rclone for Android
 [![license: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/gulp79/Round-Sync/blob/master/LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/gulp79/Round-Sync?include_prereleases)](https://github.com/gulp79/Round-Sync/releases/latest)
-![Downloads](https://img.shields.io/github/downloads/gulp79/Round-Sync/total)  ![Latest Downloads](https://img.shields.io/github/downloads/gulp79/Round-Sync/latest/total)
+![Latest Downloads](https://img.shields.io/github/downloads/gulp79/Round-Sync/total)
 
 
 > ⚠️ **Unofficial Fork Disclaimer**  
