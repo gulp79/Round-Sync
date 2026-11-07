@@ -195,6 +195,10 @@ public class TasksRecyclerViewAdapter extends RecyclerView.Adapter<TasksRecycler
                         createShortcut(context, task);
                     }
                     break;
+                case R.id.action_view_log:
+                    showLogDialog(task);
+                    break;
+
                 default:
                     return false;
             }
@@ -233,6 +237,44 @@ public class TasksRecyclerViewAdapter extends RecyclerView.Adapter<TasksRecycler
         }
     }
 
+    private void showLogDialog(Task task) {
+        // Kotlin'deki task.title değişkeni Java'da getTitle() olarak çağrılır
+        String taskName = task.getTitle();
+        java.io.File logFile = new java.io.File(context.getExternalFilesDir(null).getAbsolutePath() + "/logs/" + taskName + "_log.txt");
+
+        if (!logFile.exists()) {
+            android.widget.Toast.makeText(context, "Log henüz oluşmamış: " + logFile.getName(), android.widget.Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        try {
+            StringBuilder logContent = new StringBuilder();
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(logFile));
+            String line;
+            int lineCount = 0;
+
+            // Uygulamanın donmaması için logun ilk 100 satırını okuyoruz
+            while ((line = reader.readLine()) != null && lineCount < 100) {
+                logContent.append(line).append("\n\n");
+                lineCount++;
+            }
+            reader.close();
+
+            if (lineCount >= 100) {
+                logContent.append("... (Log çok uzun olduğu için kesildi) ...");
+            }
+
+            new androidx.appcompat.app.AlertDialog.Builder(context)
+                    .setTitle("Log: " + taskName)
+                    .setMessage(logContent.toString())
+                    .setPositiveButton("Kapat", null)
+                    .show();
+
+        } catch (Exception e) {
+            android.widget.Toast.makeText(context, "Log okunamadı: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private static void createShortcut(Context c, Task task) {
         Intent intent = new Intent(TASK_SYNC_ACTION, Uri.EMPTY, c, ShortcutServiceActivity.class);
         intent.setAction(TASK_SYNC_ACTION);
@@ -252,3 +294,5 @@ public class TasksRecyclerViewAdapter extends RecyclerView.Adapter<TasksRecycler
     }
 
 }
+
+

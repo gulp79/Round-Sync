@@ -129,6 +129,7 @@
     <string name="error_retrieving_files">Fehler beim Abrufen der Dateien</string>
     <string name="sync_service_notification_channel_description">Hintergrunddienst für Synchronisierung</string>
     <string name="moving_info">Verschiebe…</string>
+    <string name="view_log">Protokoll anzeigen</string>
     <string name="deleting_info">Lösche…</string>
     <string name="operation_failed">Synchronisierung fehlgeschlagen</string>
     <string name="operation_failed_unknown">%1$s schlug aufgrund eines unbekannten Fehlers fehl.</string>

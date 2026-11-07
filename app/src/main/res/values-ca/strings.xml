@@ -129,6 +129,7 @@
     <string name="pref_proxy_host_dlg_title">Introdueix la IP o el domini del servidor intermediari</string>
     <string name="pref_proxy_port">Port del servidor intermediari</string>
     <string name="pref_proxy_port_dlg_title">Introdueix el port del servidor intermediari</string>
+    <string name="view_log">Veure registres</string>
     <string name="pref_locale">Idioma</string>
     <string name="pref_locale_dlg_title">Tria l\'idioma</string>
     <string name="pref_locale_restart_notice">El canvi d\'idioma es farà efectiu en reiniciar l\'aplicació</string>
