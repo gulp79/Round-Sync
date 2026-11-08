@@ -85,6 +85,27 @@ jobs:
           echo "$APP_KEYSTORE_BASE64" | base64 --decode > app/release.keystore
 
       # -----------------------------
+      # VERSION FROM TAG
+      # -----------------------------
+      - name: Resolve app version from git tag
+        id: app_version
+        run: |
+          # On a tag push, GITHUB_REF_NAME is already the tag (e.g. v2.6.2)
+          # On workflow_dispatch, pick the latest reachable tag instead
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            RAW_TAG="${GITHUB_REF_NAME}"
+          else
+            RAW_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          fi
+          VERSION="${RAW_TAG#v}"   # strip leading 'v'
+          if [[ -z "$VERSION" ]]; then
+            # ultimate fallback: read from gradle.properties
+            VERSION=$(grep '^de\.felixnuesse\.extract\.versionName=' gradle.properties | cut -d'=' -f2)
+          fi
+          echo "Resolved version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # -----------------------------
       # BUILD AND SIGN
       # -----------------------------
       - name: Build Signed Release APK (ALL SPLITS)
@@ -93,8 +114,9 @@ jobs:
           CMD_RELEASE_KEYSTORE_PASSWORD: ${{ env.KEY_STORE_PASSWORD }}
           CMD_RELEASE_KEY_ALIAS: ${{ env.KEY_ALIAS }}
           CMD_RELEASE_KEY_PASSWORD: ${{ env.KEY_PASSWORD }}
+          APP_VERSION_NAME: ${{ steps.app_version.outputs.version }}
         run: |
-          echo "Eseguo build completa con TUTTE le architetture..."
+          echo "Eseguo build completa con TUTTE le architetture (versione: $APP_VERSION_NAME)..."
           ./gradlew assembleOssRelease --stacktrace
 
       ###########################################################
