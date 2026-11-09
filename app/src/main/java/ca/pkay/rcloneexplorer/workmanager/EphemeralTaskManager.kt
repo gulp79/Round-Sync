@@ -69,6 +69,8 @@ class EphemeralTaskManager(private var mContext: Context) {
 
             addFileItemToData(EphemeralWorker.MOVE_FILE, file, data)
             data.putString(EphemeralWorker.MOVE_TARGETPATH, currentPath)
+            // Pass the source path (where the file came from) so the UI can refresh it too
+            data.putString(EphemeralWorker.MOVE_SOURCEPATH, readablePath)
             EphemeralTaskManager(context).work(data.build(), "")
         }
 
@@ -86,6 +88,8 @@ class EphemeralTaskManager(private var mContext: Context) {
             addRemoteItemToData(EphemeralWorker.REMOTE, remote, data)
 
             addFileItemToData(EphemeralWorker.DELETE_FILE, file, data)
+            // Pass the current directory path so the UI knows which folder to refresh
+            data.putString(EphemeralWorker.DELETE_CURRENTPATH, currentPath)
             EphemeralTaskManager(context).work(data.build(), "")
         }
 

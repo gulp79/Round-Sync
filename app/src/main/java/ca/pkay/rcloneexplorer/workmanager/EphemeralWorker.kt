@@ -55,8 +55,10 @@ class EphemeralWorker (private var mContext: Context, workerParams: WorkerParame
 
         const val MOVE_FILE = "MOVE_FILE"
         const val MOVE_TARGETPATH = "MOVE_TARGETPATH"
+        const val MOVE_SOURCEPATH = "MOVE_SOURCEPATH"
 
         const val DELETE_FILE = "DELETE_FILE"
+        const val DELETE_CURRENTPATH = "DELETE_CURRENTPATH"
     }
 
     internal enum class FAILURE_REASON {
@@ -168,6 +170,29 @@ class EphemeralWorker (private var mContext: Context, workerParams: WorkerParame
                     }
                 }
                 handleSync(mTitle)
+
+                // Notify the UI that the file operation is complete so it can refresh the file list
+                when(type){
+                    Type.UPLOAD -> {
+                        // Broadcast the target directory path so the file explorer refreshes it
+                        sendFinishedBroadcast(remoteItem.name, inputData.getString(UPLOAD_TARGETPATH))
+                    }
+                    Type.DELETE -> {
+                        // Broadcast the directory where the file was deleted from
+                        sendFinishedBroadcast(remoteItem.name, inputData.getString(DELETE_CURRENTPATH))
+                    }
+                    Type.MOVE -> {
+                        // Broadcast both destination and source paths so both are refreshed
+                        sendFinishedBroadcast(
+                            remoteItem.name,
+                            inputData.getString(MOVE_TARGETPATH),
+                            inputData.getString(MOVE_SOURCEPATH)
+                        )
+                    }
+                    Type.DOWNLOAD -> {
+                        // No UI file list refresh needed for downloads
+                    }
+                }
             } else {
                 log("Preconditions are not met!")
                 postSync()
@@ -368,11 +393,24 @@ class EphemeralWorker (private var mContext: Context, workerParams: WorkerParame
         return true
     }
 
-    private fun sendUploadFinishedBroadcast(remote: String, path: String?) {
+    /**
+     * Sends a local broadcast to notify the UI (FileExplorerFragment) that a file operation
+     * has completed, so it can refresh the affected directory listing.
+     *
+     * @param remote  The remote name to match against the currently open explorer.
+     * @param path    The primary directory path that was modified (e.g. parent of deleted file,
+     *                upload destination, or move destination).
+     * @param path2   An optional secondary path (e.g. the source directory for a move operation)
+     *                so both source and destination are refreshed.
+     */
+    private fun sendFinishedBroadcast(remote: String, path: String?, path2: String? = null) {
         val intent = Intent()
         intent.action = getString(R.string.background_service_broadcast)
         intent.putExtra(getString(R.string.background_service_broadcast_data_remote), remote)
         intent.putExtra(getString(R.string.background_service_broadcast_data_path), path)
+        if (path2 != null) {
+            intent.putExtra(getString(R.string.background_service_broadcast_data_path2), path2)
+        }
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent)
     }
 
