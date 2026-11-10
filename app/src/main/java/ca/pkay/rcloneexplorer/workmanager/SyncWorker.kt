@@ -166,7 +166,9 @@ class SyncWorker (private val mContext: Context, workerParams: WorkerParameters)
             logFile.bufferedWriter().use { logWriter ->
                 try {
                     val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault())
-                    logWriter.write("${sdf.format(java.util.Date())} INFO  : Senkronizasyon basladi: $title\n\n")
+                    // strings.xml'den "Synchronisation started." metnini çek
+                    val syncStartedText = mContext.getString(R.string.sync_started)
+                    logWriter.write("${sdf.format(java.util.Date())} INFO  : $syncStartedText $title\n\n")
 
                     val reader = BufferedReader(InputStreamReader(localProcessReference.errorStream))
                     val iterator = reader.lineSequence().iterator()
@@ -212,13 +214,16 @@ class SyncWorker (private val mContext: Context, workerParams: WorkerParameters)
                         }
                     }
 
-
-
                     if (finalStatsMsg.isNotEmpty()) {
-                        logWriter.write("\n--- ISLEM OZETI ---\n$finalStatsMsg\n")
+                        // strings.xml'den "Summary of Operation." metnini çek
+                        val summaryText = mContext.getString(R.string.sync_summary)
+                        logWriter.write("\n--- $summaryText ---\n$finalStatsMsg\n")
                     }
+                    
                     val endSdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault())
-                    logWriter.write("\n${endSdf.format(java.util.Date())} INFO  : Islem sona erdi.\n")
+                    // strings.xml'den "Operation finished." metnini çek
+                    val syncFinishedText = mContext.getString(R.string.sync_finished)
+                    logWriter.write("\n${endSdf.format(java.util.Date())} INFO  : $syncFinishedText\n")
 
                 } catch (e: InterruptedIOException) {
                     FLog.e(TAG, "onHandleIntent: I/O interrupted, stream closed", e)
@@ -243,7 +248,7 @@ class SyncWorker (private val mContext: Context, workerParams: WorkerParameters)
 
         val logFile = File(mContext.getExternalFilesDir(null)?.absolutePath + "/logs/" + taskName + "_log.txt")
         if (!logFile.exists()) {
-            Toast.makeText(mContext, "Henüz log dosyası oluşturulmamış.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(mContext, "Log file is not created.", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -262,7 +267,7 @@ class SyncWorker (private val mContext: Context, workerParams: WorkerParameters)
                 .setPositiveButton("Kapat", null)
                 .show()
         } catch (e: Exception) {
-            Toast.makeText(mContext, "Log okunamadı: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(mContext, "Can not read Log: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

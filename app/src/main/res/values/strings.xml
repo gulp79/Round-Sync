@@ -600,6 +600,7 @@
     <string name="sync_header">Sync</string>
     <string name="sync_started">Synchronisation started.</string>
     <string name="sync_summary">Summary of Operation.</string>
+    <string name="sync_finished">Operation finished.</string>
     <!-- Messages Preferences -->
     <string name="signature_title">Your signature</string>
     <string name="reply_title">Default reply action</string>

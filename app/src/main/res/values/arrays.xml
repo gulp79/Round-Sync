@@ -9,6 +9,7 @@
     <string-array name="locales">
         <item>en-US</item>
         <item>de-DE</item>
+        <item>tr-TR</item>
         <item>zh-CN</item>
     </string-array>
 
