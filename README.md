@@ -12,7 +12,7 @@
 > Contributions, feedback, and scrutiny are welcome.
 >
 > ---
-> ☕ **Enjoying my work?** &nbsp; <a href="https://ko-fi.com/gulp79"><img src="docs/kofi-support.webp" alt="Support me on Ko-fi" height="32" style="vertical-align: middle;" /></a>
+> ☕ **Enjoying my work?** &nbsp; <a href="https://ko-fi.com/gulp79"><img src="docs/kofi-support.webp" alt="Support me on Ko-fi" height="128" style="vertical-align: middle;" /></a>
 
 A cloud file manager, powered by rclone.
 Visit [https://roundsync.com](https://roundsync.com) for more information!
