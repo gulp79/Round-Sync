@@ -10,6 +10,9 @@
 > I am **not affiliated with the upstream maintainers**, and this fork **does not intend to be malicious or harmful** in any way.  
 > Please **read the source code** if you're unsure or want to verify that it behaves as described.  
 > Contributions, feedback, and scrutiny are welcome.
+>
+> ---
+> ☕ **Enjoying my work?** &nbsp; <a href="https://ko-fi.com/gulp79"><img src="docs/kofi-support.webp" alt="Support me on Ko-fi" height="32" style="vertical-align: middle;" /></a>
 
 A cloud file manager, powered by rclone.
 Visit [https://roundsync.com](https://roundsync.com) for more information!
